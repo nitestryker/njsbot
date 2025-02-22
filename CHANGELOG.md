@@ -1,5 +1,18 @@
 # 📜 Changelog
 
+## 🚀 Changes in 0.9-QuickFix
+Backend Fixes
+✅ Ensures sentimentStats and wordCloudData are properly passed from irc.js
+✅ Fixes JSON formatting issues in irc.js
+✅ Ensures startDate and endDate filtering works correctly
+✅ Keeps pagination, search, sentiment filtering, and chat statistics intact
+
+🎨 Frontend Fixes
+✅ Pie Chart now correctly pulls sentiment data and updates live
+✅ Hides chart if no sentiment data exists (prevents errors)
+✅ Word Cloud properly renders words based on message frequency
+✅ Hides Word Cloud if no words exist (prevents crashes)
+
 ## 🚀 Changes in 0.9-rev1
 ✅ **Pie Chart for Sentiment Analysis**  
 ✅ **Word Cloud of Most Used Words**  

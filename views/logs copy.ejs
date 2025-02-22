@@ -24,6 +24,7 @@
             <% }) %>
         </ul>
 
+                <li><span class="<%= stat.sentiment.toLowerCase() === 'positive' ? 'sentiment-positive' : stat.sentiment.toLowerCase() === 'negative' ? 'sentiment-negative' : 'sentiment-neutral' %>">
         <!-- Search Logs -->
         <form method="GET" action="/logs" class="mb-3 d-flex align-items-center gap-2">
             <input type="text" name="search" id="searchBar" class="form-control" placeholder="Search messages..." value="<%= searchQuery || '' %>">

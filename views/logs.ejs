@@ -6,6 +6,7 @@
     <title>IRC Chat Logs</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.5/build/d3.layout.cloud.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <style>
@@ -118,78 +119,61 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const searchQuery = "<%= searchQuery ? searchQuery.replace(/"/g, '&quot;') : '' %>";
-
-        // Auto-refresh logs when a new message is received
-        socket.on('newMessage', (data) => {
-            let row = `<tr><td>${data.timestamp}</td><td><a href="/user/${data.user}" class="text-decoration-none">${data.user}</a></td>
-            <td class="message-text">${highlightText(data.message)}</td>
-            <td><span class="${data.sentiment.toLowerCase() === 'positive' ? 'sentiment-positive' : data.sentiment.toLowerCase() === 'negative' ? 'sentiment-negative' : 'sentiment-neutral'}">
-                ${data.sentiment}
-            </span></td></tr>`;
-            document.getElementById('logTable').insertAdjacentHTML('afterbegin', row);
-        });
 
         // Sentiment Pie Chart
-        const ctx = document.getElementById('sentimentChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Positive', 'Neutral', 'Negative'],
-                datasets: [{
-                    data: <%= JSON.stringify(sentimentStats.map(s => s.count)) %>,
-                    backgroundColor: ['green', 'gray', 'red']
-                }]
-            }
-        });
+        const sentimentData = <%- JSON.stringify(sentimentStats) %>;
+
+        if (sentimentData.length > 0) {
+            const ctx = document.getElementById('sentimentChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: sentimentData.map(s => s.sentiment),
+                    datasets: [{
+                        data: sentimentData.map(s => s.count),
+                        backgroundColor: ['green', 'gray', 'red']
+                    }]
+                }
+            });
+        } else {
+            document.getElementById('sentimentChart').style.display = "none";
+        }
 
         // Word Cloud
-        const words = <%= wordCloudData %>;
-        const svg = d3.select("#wordCloud"),
-            width = +svg.attr("width"),
-            height = +svg.attr("height");
+        const wordCloudData = <%- wordCloudData %>;
 
-        const layout = d3.layout.cloud()
-            .size([width, height])
-            .words(words)
-            .padding(5)
-            .rotate(() => 0)
-            .fontSize(d => d.size)
-            .on("end", draw);
+        if (wordCloudData.length > 0) {
+            const svg = d3.select("#wordCloud"),
+                width = +svg.attr("width"),
+                height = +svg.attr("height");
 
-        layout.start();
+            const layout = d3.layout.cloud()
+                .size([width, height])
+                .words(wordCloudData)
+                .padding(5)
+                .rotate(() => 0)
+                .fontSize(d => d.size)
+                .on("end", draw);
 
-        function draw(words) {
-            svg.append("g")
-                .attr("transform", `translate(${width / 2},${height / 2})`)
-                .selectAll("text")
-                .data(words)
-                .enter().append("text")
-                .style("font-size", d => d.size + "px")
-                .attr("text-anchor", "middle")
-                .attr("fill", "blue")
-                .attr("transform", d => `translate(${d.x}, ${d.y})`)
-                .text(d => d.text);
-        }
+            layout.start();
 
-        // Function to highlight search terms
-        function highlightText(text) {
-            if (searchQuery) {
-                let regex = new RegExp(searchQuery, "gi");
-                return text.replace(regex, (match) => `<span class="highlight">${match}</span>`);
+            function draw(words) {
+                svg.append("g")
+                    .attr("transform", `translate(${width / 2},${height / 2})`)
+                    .selectAll("text")
+                    .data(words)
+                    .enter().append("text")
+                    .style("font-size", d => d.size + "px")
+                    .attr("text-anchor", "middle")
+                    .attr("fill", "blue")
+                    .attr("transform", d => `translate(${d.x}, ${d.y})`)
+                    .text(d => d.text);
             }
-            return text;
+        } else {
+            document.getElementById('wordCloud').style.display = "none";
         }
-
-        // Apply highlights to existing messages
-        document.querySelectorAll(".message-text").forEach(td => {
-            td.innerHTML = highlightText(td.innerText);
-        });
-
-        // Clear Search Button
-        document.getElementById('clearSearch').addEventListener('click', function () {
-            window.location.href = "/logs"; // Redirect to logs page without search query
-        });
     </script>
+
+    
 </body>
 </html>

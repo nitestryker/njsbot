@@ -220,18 +220,27 @@ app.get('/logs', (req, res) => {
                             size: wordCounts[word] * 10 // Scale sizes
                         }));
 
-                        res.render('logs', {
-                            logs,
-                            activeUsers: Array.from(activeUsers),
-                            page,
-                            searchQuery: req.query.search || "",
-                            sentimentFilter,
-                            totalMessages: total.totalMessages || 0,
-                            topUsers: topUsers || [],
-                            sentimentStats: sentimentStats || [],
-                            startDate: req.query.start || "",
-                            endDate: req.query.end || "",
-                            wordCloudData: JSON.stringify(wordCloudData) // Pass to frontend
+                        // Fetch total message count for pagination
+                        db.get(`SELECT COUNT(*) as totalCount FROM messages`, (err, totalCount) => {
+                            if (err) {
+                                logger.error("Error fetching total count: " + err.message);
+                                return res.status(500).send("Error fetching total count");
+                            }
+
+                            res.render('logs', {
+                                logs,
+                                activeUsers: Array.from(activeUsers),
+                                page,
+                                searchQuery: req.query.search || "",
+                                sentimentFilter,
+                                totalMessages: total.totalMessages || 0,
+                                totalPages: Math.ceil(totalCount.totalCount / limit),
+                                topUsers: topUsers || [],
+                                sentimentStats: sentimentStats || [],
+                                startDate: req.query.start || "",
+                                endDate: req.query.end || "",
+                                wordCloudData: JSON.stringify(wordCloudData) // Fix JSON data for frontend
+                            });
                         });
                     });
                 });
