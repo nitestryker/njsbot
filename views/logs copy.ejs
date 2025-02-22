@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRC Chat Logs</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .highlight { background-color: yellow; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2 class="mb-3">📜 IRC Chat Logs</h2>
+
+        <!-- Chat Statistics -->
+        <h4>📊 Chat Statistics</h4>
+        <p><strong>Total Messages:</strong> <%= totalMessages %></p>
+        <h5>Top 5 Most Active Users:</h5>
+        <ul>
+            <% topUsers.forEach(user => { %>
+                <li><%= user.user %> - <%= user.count %> messages</li>
+            <% }) %>
+        </ul>
+
+                <li><span class="<%= stat.sentiment.toLowerCase() === 'positive' ? 'sentiment-positive' : stat.sentiment.toLowerCase() === 'negative' ? 'sentiment-negative' : 'sentiment-neutral' %>">
+        <!-- Search Logs -->
+        <form method="GET" action="/logs" class="mb-3 d-flex align-items-center gap-2">
+            <input type="text" name="search" id="searchBar" class="form-control" placeholder="Search messages..." value="<%= searchQuery || '' %>">
+            <button type="submit" class="btn btn-info">🔍 Search</button>
+            <button type="button" id="clearSearch" class="btn btn-danger">❌ Clear</button>
+        </form>
+
+        <!-- Chat Log Filters -->
+        <form method="GET" action="/logs" class="mb-3 d-flex align-items-center gap-2">
+            <label for="start">Start Date:</label>
+            <input type="date" name="start" class="form-control" value="<%= startDate %>">
+
+            <label for="end">End Date:</label>
+            <input type="date" name="end" class="form-control" value="<%= endDate %>">
+
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+
+        <!-- Export Buttons -->
+        <div class="mb-3">
+            <a href="/export/csv" class="btn btn-success">📥 Export as CSV</a>
+            <a href="/export/json" class="btn btn-warning">📥 Export as JSON</a>
+        </div>
+
+        <!-- Chat Logs Table -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody id="logTable">
+                <% logs.forEach(log => { %>
+                    <tr>
+                        <td><%= log.timestamp %></td>
+                        <td><a href="/user/<%= log.user %>" class="text-decoration-none"><%= log.user %></a></td>
+                        <td class="message-text"><%= log.message %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-content-between">
+            <% if (page > 1) { %>
+                <a href="/logs?page=<%= page - 1 %>&search=<%= searchQuery || '' %>" class="btn btn-secondary">⬅ Previous</a>
+            <% } %>
+            <a href="/logs?page=<%= page + 1 %>&search=<%= searchQuery || '' %>" class="btn btn-secondary">Next ➡</a>
+        </div>
+
+        <!-- Active Users -->
+        <div class="mt-4">
+            <h4>👥 Active Users</h4>
+            <ul id="activeUsers" class="list-group">
+                <% activeUsers.forEach(user => { %>
+                    <li class="list-group-item"><%= user %></li>
+                <% }) %>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Socket.IO for Live Updates -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const searchQuery = "<%= searchQuery ? searchQuery.replace(/"/g, '&quot;') : '' %>";
+
+        // Auto-refresh logs when a new message is received
+        socket.on('newMessage', (data) => {
+            let row = `<tr><td>${data.timestamp}</td><td><a href="/user/${data.user}" class="text-decoration-none">${data.user}</a></td><td class="message-text">${highlightText(data.message)}</td></tr>`;
+            document.getElementById('logTable').insertAdjacentHTML('afterbegin', row);
+        });
+
+        // Function to highlight search terms
+        function highlightText(text) {
+            if (searchQuery) {
+                let regex = new RegExp(searchQuery, "gi");
+                return text.replace(regex, (match) => `<span class="highlight">${match}</span>`);
+            }
+            return text;
+        }
+
+        // Apply highlights to existing messages
+        document.querySelectorAll(".message-text").forEach(td => {
+            td.innerHTML = highlightText(td.innerText);
+        });
+
+        // Clear Search Button
+        document.getElementById('clearSearch').addEventListener('click', function () {
+            window.location.href = "/logs"; // Redirect to logs page without search query
+        });
+    </script>
+</body>
+</html>
